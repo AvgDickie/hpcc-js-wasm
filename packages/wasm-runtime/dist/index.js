@@ -1,5 +1,5 @@
-// POC shared wasm runtime for hpcc-js-wasm
-// Exports: decode(raw:string):Uint8Array and instantiateModule(wasmBinary:Uint8Array, wrapper?:any):Promise<any>
+// POC shared wasm runtime for hpcc-js-wasm (simplified for no-FS/no-locateFile use)
+// Exports: decode(raw:string):Uint8Array and instantiateModule(wasmBinary:Uint8Array):Promise<any>
 
 export const table = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,./:;<=>?@[]^_`{|}~"';
 
@@ -36,21 +36,9 @@ export function decode(raw) {
     return new Uint8Array(ret);
 }
 
-export async function instantiateModule(wasmBinary, wrapper) {
-    // If the compiled target provides a wrapper function (emscripten modularized output), call it.
-    try {
-        if (wrapper && typeof wrapper === 'function') {
-            // wrapper may return a Module-like object or a Promise
-            const mod = wrapper({ wasmBinary, locateFile: (name) => "sfx-wrapper nop" });
-            return Promise.resolve(mod);
-        }
-    } catch (e) {
-        // fall through to direct instantiation
-    }
-
-    // Fallback: instantiate using the WebAssembly API
+export async function instantiateModule(wasmBinary) {
+    // Simplified: directly instantiate the wasm with no extra imports or locateFile handling.
     const res = await WebAssembly.instantiate(wasmBinary, {});
-    // WebAssembly.instantiate may return { module, instance } or a Module namespace depending on environment
     if (res && res.instance) return res.instance.exports || res.instance;
     return res;
 }

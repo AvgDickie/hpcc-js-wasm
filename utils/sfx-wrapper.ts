@@ -7,12 +7,9 @@ import type { Plugin, PluginBuild } from "esbuild";
 function tpl(wasmJsPath: string, base91Wasm: string, base91CompressedWasm: string) {
 
     const compressed = (base91CompressedWasm.length + 8 * 1024) <= base91Wasm.length;
-    const wasmJsExists = existsSync(wasmJsPath);
 
     return `\
-${compressed ? 'import { decompress } from "fzstd";' : ""}
 import { decode, instantiateModule } from "@hpcc-js/wasm-runtime";
-${wasmJsExists ? `import wrapper from "${wasmJsPath}";` : ""}
 
 const blobStr = '${compressed ? base91CompressedWasm : base91Wasm}';
 
@@ -24,7 +21,7 @@ export default function() {
     }
 
     if (!g_module) {
-        g_module = instantiateModule(g_wasmBinary, ${wasmJsExists ? 'wrapper' : 'undefined'});
+        g_module = instantiateModule(g_wasmBinary);
     }
     return g_module;
 }
