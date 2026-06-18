@@ -1,0 +1,16 @@
+{
+  "name": "@hpcc-js/wasm-runtime",
+  "version": "0.0.0-poc",
+  "description": "POC shared wasm runtime/loader for hpcc-js-wasm",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "license": "Apache-2.0"
+}

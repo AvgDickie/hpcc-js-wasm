@@ -11,63 +11,22 @@ function tpl(wasmJsPath: string, base91Wasm: string, base91CompressedWasm: strin
 
     return `\
 ${compressed ? 'import { decompress } from "fzstd";' : ""}
+import { decode, instantiateModule } from "@hpcc-js/wasm-runtime";
 ${wasmJsExists ? `import wrapper from "${wasmJsPath}";` : ""}
-
-const table = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,./:;<=>?@[]^_\`{|}~"';
-
-function decode(raw: string): Uint8Array {
-    const len = raw.length;
-    const ret: number[] = [];
-
-    let b = 0;
-    let n = 0;
-    let v = -1;
-
-    for (let i = 0; i < len; i++) {
-        const p = table.indexOf(raw[i]);
-        /* istanbul ignore next */
-        if (p === -1) continue;
-        if (v < 0) {
-            v = p;
-        } else {
-            v += p * 91;
-            b |= v << n;
-            n += (v & 8191) > 88 ? 13 : 14;
-            do {
-                ret.push(b & 0xff);
-                b >>= 8;
-                n -= 8;
-            } while (n > 7);
-            v = -1;
-        }
-    }
-
-    if (v > -1) {
-        ret.push((b | v << n) & 0xff);
-    }
-
-    return new Uint8Array(ret);
-}
 
 const blobStr = '${compressed ? base91CompressedWasm : base91Wasm}';
 
-let g_module: Uint8Array | undefined;
+let g_module: Promise<any> | undefined;
 let g_wasmBinary: Uint8Array | undefined;
 export default function() {
     if (!g_wasmBinary) {
         g_wasmBinary = ${compressed ? "decompress(decode(blobStr))" : "decode(blobStr)"};
     }
-${!wasmJsExists ? `\
-    return g_wasmBinary;
-`: `\
+
     if (!g_module) {
-        g_module = wrapper({
-            wasmBinary: g_wasmBinary,
-            locateFile: (name: string) => "sfx-wrapper nop"
-        });
+        g_module = instantiateModule(g_wasmBinary, ${wasmJsExists ? 'wrapper' : 'undefined'});
     }
     return g_module;
-`}
 }
 
 export function reset() {
